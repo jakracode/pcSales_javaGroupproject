@@ -320,6 +320,134 @@ public class SaleDAO {
     }
     
     /**
+     * Get daily sales totals for the last N days
+     */
+    public List<Object[]> getDailySalesData(int days) {
+        List<Object[]> data = new ArrayList<>();
+        String sql = "SELECT DATE(sale_date) as sale_day, COUNT(*) as count, SUM(total_amount) as total " +
+                     "FROM sales " +
+                     "WHERE sale_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
+                     "GROUP BY DATE(sale_date) " +
+                     "ORDER BY sale_day";
+        
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, days);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getDate("sale_day"),
+                    rs.getInt("count"),
+                    rs.getDouble("total")
+                };
+                data.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+    
+    /**
+     * Get weekly sales totals for the last N weeks
+     */
+    public List<Object[]> getWeeklySalesData(int weeks) {
+        List<Object[]> data = new ArrayList<>();
+        String sql = "SELECT YEARWEEK(sale_date) as sale_week, " +
+                     "MIN(DATE(sale_date)) as week_start, " +
+                     "COUNT(*) as count, " +
+                     "SUM(total_amount) as total " +
+                     "FROM sales " +
+                     "WHERE sale_date >= DATE_SUB(CURDATE(), INTERVAL ? WEEK) " +
+                     "GROUP BY YEARWEEK(sale_date) " +
+                     "ORDER BY sale_week";
+        
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, weeks);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getDate("week_start"),
+                    rs.getInt("count"),
+                    rs.getDouble("total")
+                };
+                data.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+    
+    /**
+     * Get monthly sales totals for the last N months
+     */
+    public List<Object[]> getMonthlySalesData(int months) {
+        List<Object[]> data = new ArrayList<>();
+        String sql = "SELECT DATE_FORMAT(sale_date, '%Y-%m') as sale_month, " +
+                     "MIN(DATE(sale_date)) as month_start, " +
+                     "COUNT(*) as count, " +
+                     "SUM(total_amount) as total " +
+                     "FROM sales " +
+                     "WHERE sale_date >= DATE_SUB(CURDATE(), INTERVAL ? MONTH) " +
+                     "GROUP BY DATE_FORMAT(sale_date, '%Y-%m') " +
+                     "ORDER BY sale_month";
+        
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, months);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getString("sale_month"),
+                    rs.getInt("count"),
+                    rs.getDouble("total")
+                };
+                data.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+    
+    /**
+     * Get hourly sales distribution for today
+     */
+    public List<Object[]> getHourlySalesData() {
+        List<Object[]> data = new ArrayList<>();
+        String sql = "SELECT HOUR(sale_date) as sale_hour, COUNT(*) as count, SUM(total_amount) as total " +
+                     "FROM sales " +
+                     "WHERE DATE(sale_date) = CURDATE() " +
+                     "GROUP BY HOUR(sale_date) " +
+                     "ORDER BY sale_hour";
+        
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("sale_hour"),
+                    rs.getInt("count"),
+                    rs.getDouble("total")
+                };
+                data.add(row);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+    
+    /**
      * Helper method to set Integer or NULL
      */
     private void setIntegerOrNull(PreparedStatement stmt, int index, Integer value) throws SQLException {

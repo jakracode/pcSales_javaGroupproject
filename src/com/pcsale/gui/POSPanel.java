@@ -80,13 +80,13 @@ public class POSPanel extends JPanel {
         
         JButton btnSearch = new JButton("Search");
         btnSearch.setBackground(new Color(52, 152, 219));
-        btnSearch.setForeground(Color.WHITE);
+        btnSearch.setForeground(Color.BLACK);
         btnSearch.setFocusPainted(false);
         btnSearch.addActionListener(e -> searchProducts());
         
         JButton btnRefresh = new JButton("Refresh");
         btnRefresh.setBackground(new Color(149, 165, 166));
-        btnRefresh.setForeground(Color.WHITE);
+        btnRefresh.setForeground(Color.BLACK);
         btnRefresh.setFocusPainted(false);
         btnRefresh.addActionListener(e -> loadProducts());
         
@@ -124,7 +124,7 @@ public class POSPanel extends JPanel {
         
         JButton btnAddToCart = new JButton("Add to Cart");
         btnAddToCart.setBackground(new Color(46, 213, 115));
-        btnAddToCart.setForeground(Color.WHITE);
+        btnAddToCart.setForeground(Color.BLACK);
         btnAddToCart.setFont(new Font("Arial", Font.BOLD, 14));
         btnAddToCart.setFocusPainted(false);
         btnAddToCart.addActionListener(e -> addToCart());
@@ -170,13 +170,13 @@ public class POSPanel extends JPanel {
         
         JButton btnRemove = new JButton("Remove Item");
         btnRemove.setBackground(new Color(231, 76, 60));
-        btnRemove.setForeground(Color.WHITE);
+        btnRemove.setForeground(Color.BLACK);
         btnRemove.setFocusPainted(false);
         btnRemove.addActionListener(e -> removeFromCart());
         
         JButton btnClear = new JButton("Clear Cart");
         btnClear.setBackground(new Color(149, 165, 166));
-        btnClear.setForeground(Color.WHITE);
+        btnClear.setForeground(Color.BLACK);
         btnClear.setFocusPainted(false);
         btnClear.addActionListener(e -> clearCart());
         
@@ -239,7 +239,7 @@ public class POSPanel extends JPanel {
         JButton btnCheckout = new JButton("COMPLETE SALE");
         btnCheckout.setPreferredSize(new Dimension(350, 50));
         btnCheckout.setBackground(new Color(46, 213, 115));
-        btnCheckout.setForeground(Color.WHITE);
+        btnCheckout.setForeground(Color.BLACK);
         btnCheckout.setFont(new Font("Arial", Font.BOLD, 18));
         btnCheckout.setFocusPainted(false);
         btnCheckout.addActionListener(e -> completeSale());

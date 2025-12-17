@@ -4,9 +4,9 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PRESENTATION LAYER (GUI)                  │
+│                        PRESENTATION LAYER (GUI)                 │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
+│                                                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
 │  │ LoginFrame   │  │ MainDashboard│  │  POSPanel    │         │
 │  │              │→ │              │→ │              │         │
@@ -14,7 +14,7 @@
 │  │ - Password   │  │ - Navigation │  │   Search     │         │
 │  │ - Login Btn  │  │ - Menu       │  │ - Cart       │         │
 │  └──────────────┘  └──────────────┘  │ - Checkout   │         │
-│                                       └──────────────┘        │
+│                                      └──────────────┘        │
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
 │  │ ProductPanel │  │CustomerPanel │  │ Other Panels │         │
@@ -40,7 +40,7 @@
 │  │ addUser()    │  │ addProduct() │  │ getSales()   │         │
 │  │ updateUser() │  │ updateProduct() │ generateInvoice()│     │
 │  └──────────────┘  └──────────────┘  └──────────────┘         │
-│                                                                  │
+│                                                               │
 │  ┌──────────────┐  ┌──────────────┐                           │
 │  │CustomerDAO   │  │ CategoryDAO  │                           │
 │  │              │  │              │                           │

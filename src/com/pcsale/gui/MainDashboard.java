@@ -164,16 +164,35 @@ public class MainDashboard extends JFrame {
         addStatCard(dashPanel, "Low Stock Items", String.valueOf(lowStockCount), 
                     new Color(231, 76, 60), 780, yPos);
         
+        // Sales Chart
+        JLabel lblChart = new JLabel("Last 7 Days Sales");
+        lblChart.setFont(new Font("Arial", Font.BOLD, 18));
+        lblChart.setBounds(30, 210, 300, 30);
+        dashPanel.add(lblChart);
+        
+        // Get last 7 days sales data
+        java.util.List<Object[]> salesData = saleDAO.getDailySalesData(7);
+        SalesChartPanel chartPanel = new SalesChartPanel(
+            "Daily Sales", 
+            salesData, 
+            "Date", 
+            "Sales Amount ($)", 
+            SalesChartPanel.ChartType.BAR
+        );
+        chartPanel.setBounds(30, 250, 950, 280);
+        chartPanel.setChartColor(new Color(46, 213, 115));
+        dashPanel.add(chartPanel);
+        
         // Quick actions
         JLabel lblQuick = new JLabel("Quick Actions");
         lblQuick.setFont(new Font("Arial", Font.BOLD, 18));
-        lblQuick.setBounds(30, 230, 200, 30);
+        lblQuick.setBounds(30, 550, 200, 30);
         dashPanel.add(lblQuick);
         
         JButton btnNewSale = new JButton("New Sale");
-        btnNewSale.setBounds(30, 270, 200, 50);
+        btnNewSale.setBounds(30, 590, 200, 50);
         btnNewSale.setBackground(new Color(46, 213, 115));
-        btnNewSale.setForeground(Color.WHITE);
+        btnNewSale.setForeground(Color.BLACK);
         btnNewSale.setFont(new Font("Arial", Font.BOLD, 16));
         btnNewSale.setFocusPainted(false);
         btnNewSale.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -181,9 +200,9 @@ public class MainDashboard extends JFrame {
         dashPanel.add(btnNewSale);
         
         JButton btnAddProduct = new JButton("Add Product");
-        btnAddProduct.setBounds(250, 270, 200, 50);
+        btnAddProduct.setBounds(250, 590, 200, 50);
         btnAddProduct.setBackground(new Color(52, 152, 219));
-        btnAddProduct.setForeground(Color.WHITE);
+        btnAddProduct.setForeground(Color.BLACK);
         btnAddProduct.setFont(new Font("Arial", Font.BOLD, 16));
         btnAddProduct.setFocusPainted(false);
         btnAddProduct.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -191,9 +210,9 @@ public class MainDashboard extends JFrame {
         dashPanel.add(btnAddProduct);
         
         JButton btnViewReports = new JButton("View Reports");
-        btnViewReports.setBounds(470, 270, 200, 50);
+        btnViewReports.setBounds(470, 590, 200, 50);
         btnViewReports.setBackground(new Color(155, 89, 182));
-        btnViewReports.setForeground(Color.WHITE);
+        btnViewReports.setForeground(Color.BLACK);
         btnViewReports.setFont(new Font("Arial", Font.BOLD, 16));
         btnViewReports.setFocusPainted(false);
         btnViewReports.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -202,7 +221,7 @@ public class MainDashboard extends JFrame {
         
         contentPanel.add(dashPanel, BorderLayout.CENTER);
         contentPanel.revalidate();
-        contentPanel.repaint();
+        contentPanel.repaint(); 
     }
     
     private void addStatCard(JPanel panel, String title, String value, Color color, int x, int y) {
@@ -249,9 +268,7 @@ public class MainDashboard extends JFrame {
     
     private void showSalesHistoryPanel() {
         contentPanel.removeAll();
-        JLabel lbl = new JLabel("Sales History - Coming Soon", SwingConstants.CENTER);
-        lbl.setFont(new Font("Arial", Font.BOLD, 20));
-        contentPanel.add(lbl, BorderLayout.CENTER);
+        contentPanel.add(new SalesHistoryPanel(), BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }

@@ -80,7 +80,7 @@ public class LoginFrame extends JFrame {
         btnLogin = new JButton("Login");
         btnLogin.setBounds(160, 120, 100, 35);
         btnLogin.setBackground(new Color(46, 213, 115));
-        btnLogin.setForeground(Color.WHITE);
+        btnLogin.setForeground(Color.BLACK);
         btnLogin.setFont(new Font("Arial", Font.BOLD, 14));
         btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -90,7 +90,7 @@ public class LoginFrame extends JFrame {
         btnExit = new JButton("Exit");
         btnExit.setBounds(280, 120, 100, 35);
         btnExit.setBackground(new Color(235, 77, 75));
-        btnExit.setForeground(Color.WHITE);
+        btnExit.setForeground(Color.BLACK);
         btnExit.setFont(new Font("Arial", Font.BOLD, 14));
         btnExit.setFocusPainted(false);
         btnExit.setCursor(new Cursor(Cursor.HAND_CURSOR));
