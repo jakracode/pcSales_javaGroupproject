@@ -75,7 +75,9 @@ public class SaleItem {
     
     public void setQuantity(int quantity) {
         this.quantity = quantity;
-        this.subtotal = unitPrice.multiply(new BigDecimal(quantity));
+        if (unitPrice != null) {
+            this.subtotal = unitPrice.multiply(new BigDecimal(quantity));
+        }
     }
     
     public BigDecimal getUnitPrice() {
@@ -84,7 +86,9 @@ public class SaleItem {
     
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
-        this.subtotal = unitPrice.multiply(new BigDecimal(quantity));
+        if (unitPrice != null) {
+            this.subtotal = unitPrice.multiply(new BigDecimal(quantity));
+        }
     }
     
     public BigDecimal getSubtotal() {

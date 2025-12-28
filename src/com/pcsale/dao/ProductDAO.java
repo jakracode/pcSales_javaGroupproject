@@ -278,8 +278,17 @@ public class ProductDAO {
         product.setUnit(rs.getString("unit"));
         product.setImage(rs.getString("image"));
         product.setStatus(rs.getString("status"));
-        product.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-        product.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            product.setCreatedAt(createdAt.toLocalDateTime());
+        }
+        
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            product.setUpdatedAt(updatedAt.toLocalDateTime());
+        }
+        
         return product;
     }
     

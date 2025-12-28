@@ -4,6 +4,7 @@ import com.pcsale.dao.SaleDAO;
 import com.pcsale.model.Sale;
 import com.pcsale.model.SaleItem;
 import com.pcsale.util.Formatter;
+import com.pcsale.util.ReceiptGenerator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -181,6 +182,31 @@ public class SalesHistoryPanel extends JPanel {
             }
         });
         buttonPanel.add(btnViewDetails);
+        
+        JButton btnPrintReceipt = new JButton("Print Receipt");
+        btnPrintReceipt.setFont(new Font("Arial", Font.PLAIN, 14));
+        btnPrintReceipt.setBackground(new Color(46, 204, 113));
+        btnPrintReceipt.setForeground(Color.WHITE);
+        btnPrintReceipt.setFocusPainted(false);
+        btnPrintReceipt.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnPrintReceipt.addActionListener(e -> {
+            int row = salesTable.getSelectedRow();
+            if (row != -1) {
+                int modelRow = salesTable.convertRowIndexToModel(row);
+                Sale sale = currentSales.get(modelRow);
+                // Ensure items are loaded (SaleDAO might not load them by default in list view)
+                if (sale.getItems() == null || sale.getItems().isEmpty()) {
+                    sale.setItems(saleDAO.getSaleItems(sale.getId()));
+                }
+                ReceiptGenerator.exportToTextFile(this, sale);
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Please select a sale to print receipt", 
+                    "No Selection", 
+                    JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        buttonPanel.add(btnPrintReceipt);
         
         // Combine panels
         JPanel topCombined = new JPanel(new BorderLayout());

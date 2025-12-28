@@ -7,6 +7,7 @@ import com.pcsale.model.Sale;
 import com.pcsale.model.SaleItem;
 import com.pcsale.util.SessionManager;
 import com.pcsale.util.Formatter;
+import com.pcsale.util.ReceiptGenerator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -29,7 +30,7 @@ public class POSPanel extends JPanel {
     private DefaultTableModel cartModel;
     private JLabel lblSubtotal;
     private JLabel lblTax;
-    private JLabel lblDiscount;
+    private JTextField txtDiscount;
     private JLabel lblTotal;
     private JTextField txtAmountPaid;
     private JLabel lblChange;
@@ -200,7 +201,17 @@ public class POSPanel extends JPanel {
         yPos += 25;
         
         addTotalLabel(totalsPanel, "Discount:", 20, yPos);
-        lblDiscount = addTotalValue(totalsPanel, "$0.00", 250, yPos);
+        txtDiscount = new JTextField("0.00");
+        txtDiscount.setBounds(250, yPos, 130, 25);
+        txtDiscount.setFont(new Font("Arial", Font.PLAIN, 14));
+        txtDiscount.setHorizontalAlignment(JTextField.RIGHT);
+        txtDiscount.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                updateTotals();
+            }
+        });
+        totalsPanel.add(txtDiscount);
         yPos += 30;
         
         addTotalLabel(totalsPanel, "TOTAL:", 20, yPos).setFont(new Font("Arial", Font.BOLD, 18));
@@ -430,12 +441,22 @@ public class POSPanel extends JPanel {
     
     private void updateTotals() {
         tax = BigDecimal.ZERO; // Can be calculated based on tax rate
-        discount = BigDecimal.ZERO;
+        
+        try {
+            String discountText = txtDiscount.getText().trim();
+            if (!discountText.isEmpty()) {
+                discount = new BigDecimal(discountText);
+            } else {
+                discount = BigDecimal.ZERO;
+            }
+        } catch (NumberFormatException e) {
+            discount = BigDecimal.ZERO;
+        }
+        
         total = subtotal.add(tax).subtract(discount);
         
         lblSubtotal.setText(Formatter.formatCurrency(subtotal.doubleValue()));
         lblTax.setText(Formatter.formatCurrency(tax.doubleValue()));
-        lblDiscount.setText(Formatter.formatCurrency(discount.doubleValue()));
         lblTotal.setText(Formatter.formatCurrency(total.doubleValue()));
         
         calculateChange();
@@ -484,22 +505,34 @@ public class POSPanel extends JPanel {
             sale.setDiscount(discount);
             sale.setTotalAmount(total);
             sale.setAmountPaid(amountPaid);
+            sale.setChangeDue(amountPaid.subtract(total));
             sale.setPaymentMethod(cboPaymentMethod.getSelectedItem().toString().toLowerCase());
             sale.setItems(cartItems);
             
             boolean success = saleDAO.createSale(sale);
             
             if (success) {
-                JOptionPane.showMessageDialog(this,
+                String changeStr = Formatter.formatCurrency(amountPaid.subtract(total).doubleValue());
+                
+                int option = JOptionPane.showOptionDialog(this,
                     "Sale completed successfully!\nInvoice: " + sale.getInvoiceNo() + 
-                    "\nChange: " + Formatter.formatCurrency(amountPaid.subtract(total).doubleValue()),
+                    "\nChange: " + changeStr + "\n\nWould you like to print/export the receipt?",
                     "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    null,
+                    new String[]{"Print/Export Receipt", "Close"},
+                    "Print/Export Receipt");
+                
+                if (option == JOptionPane.YES_OPTION) {
+                    ReceiptGenerator.exportToTextFile(this, sale);
+                }
                 
                 // Reset form
                 cartItems.clear();
                 updateCartTable();
                 txtAmountPaid.setText("");
+                txtDiscount.setText("0.00");
                 cboPaymentMethod.setSelectedIndex(0);
                 loadProducts();
             } else {

@@ -275,27 +275,21 @@ public class MainDashboard extends JFrame {
     
     private void showReportsPanel() {
         contentPanel.removeAll();
-        JLabel lbl = new JLabel("Reports - Coming Soon", SwingConstants.CENTER);
-        lbl.setFont(new Font("Arial", Font.BOLD, 20));
-        contentPanel.add(lbl, BorderLayout.CENTER);
+        contentPanel.add(new ReportPanel(), BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     private void showUsersPanel() {
         contentPanel.removeAll();
-        JLabel lbl = new JLabel("User Management - Coming Soon", SwingConstants.CENTER);
-        lbl.setFont(new Font("Arial", Font.BOLD, 20));
-        contentPanel.add(lbl, BorderLayout.CENTER);
+        contentPanel.add(new UserPanel(), BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
     
     private void showCategoriesPanel() {
         contentPanel.removeAll();
-        JLabel lbl = new JLabel("Category Management - Coming Soon", SwingConstants.CENTER);
-        lbl.setFont(new Font("Arial", Font.BOLD, 20));
-        contentPanel.add(lbl, BorderLayout.CENTER);
+        contentPanel.add(new CategoryPanel(), BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }

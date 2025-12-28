@@ -297,7 +297,6 @@ public class SaleDAO {
         sale.setDiscount(rs.getBigDecimal("discount"));
         sale.setTotalAmount(rs.getBigDecimal("total_amount"));
         sale.setAmountPaid(rs.getBigDecimal("amount_paid"));
-        sale.setChangeDue(rs.getBigDecimal("change_due"));
         sale.setPaymentMethod(rs.getString("payment_method"));
         sale.setNotes(rs.getString("notes"));
         return sale;

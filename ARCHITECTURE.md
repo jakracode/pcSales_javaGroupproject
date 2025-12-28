@@ -11,10 +11,10 @@
 │  │ LoginFrame   │  │ MainDashboard│  │  POSPanel    │         │
 │  │              │→ │              │→ │              │         │
 │  │ - Username   │  │ - Statistics │  │ - Product    │         │
-│  │ - Password   │  │ - Navigation │  │   Search     │         │
+│  │ - Password   │  │ - Navigation │  │   Search     │         │ 
 │  │ - Login Btn  │  │ - Menu       │  │ - Cart       │         │
 │  └──────────────┘  └──────────────┘  │ - Checkout   │         │
-│                                      └──────────────┘        │
+│                                      └──────────────┘         │
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
 │  │ ProductPanel │  │CustomerPanel │  │ Other Panels │         │

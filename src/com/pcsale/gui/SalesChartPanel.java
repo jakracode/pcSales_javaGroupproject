@@ -2,267 +2,338 @@ package com.pcsale.gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Rectangle2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-/**
- * SalesChartPanel - Custom panel for displaying sales charts
- */
 public class SalesChartPanel extends JPanel {
-    
+
     private String chartTitle;
     private List<Object[]> data;
     private String xAxisLabel;
     private String yAxisLabel;
     private ChartType chartType;
     private Color chartColor;
-    
+
+    // Interactive state
+    private int hoveredIndex = -1;
+    private Point mousePosition = null;
+
+    // Formatting
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd");
+    private final Font titleFont = new Font("Segoe UI", Font.BOLD, 18);
+    private final Font axisFont = new Font("Segoe UI", Font.BOLD, 12);
+    private final Font labelFont = new Font("Segoe UI", Font.PLAIN, 11);
+    private final Font tooltipFont = new Font("Segoe UI", Font.PLAIN, 12);
+
     public enum ChartType {
         BAR, LINE
     }
-    
+
     public SalesChartPanel(String title, List<Object[]> data, String xLabel, String yLabel, ChartType type) {
         this.chartTitle = title;
         this.data = data;
         this.xAxisLabel = xLabel;
         this.yAxisLabel = yLabel;
         this.chartType = type;
-        this.chartColor = new Color(52, 152, 219);
-        
+        this.chartColor = new Color(52, 152, 219); // Modern Blue
+
         setBackground(Color.WHITE);
-        setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199), 1));
+        setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
+
+        // Add Mouse Listener for Hover Effects
+        MouseAdapter mouseHandler = new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                mousePosition = e.getPoint();
+                calculateHoverIndex(e.getX(), e.getY());
+                repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                hoveredIndex = -1;
+                mousePosition = null;
+                repaint();
+            }
+        };
+        addMouseMotionListener(mouseHandler);
+        addMouseListener(mouseHandler);
     }
-    
+
     public void setChartColor(Color color) {
         this.chartColor = color;
         repaint();
     }
-    
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        
+        Graphics2D g2d = (Graphics2D) g;
+
+        // High Quality Rendering settings
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
         if (data == null || data.isEmpty()) {
-            drawNoData(g);
+            drawNoData(g2d);
             return;
         }
-        
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        // Calculate margins
-        int margin = 50;
-        int topMargin = 60;
-        int rightMargin = 40;
-        int bottomMargin = 80;
-        
+
+        // Layout Constants
+        int padding = 50;
+        int topPadding = 60;
+        int bottomPadding = 50;
         int width = getWidth();
         int height = getHeight();
-        int chartWidth = width - margin - rightMargin;
-        int chartHeight = height - topMargin - bottomMargin;
-        
-        // Draw title
-        g2d.setColor(new Color(52, 73, 94));
-        g2d.setFont(new Font("Arial", Font.BOLD, 16));
-        FontMetrics fm = g2d.getFontMetrics();
-        int titleWidth = fm.stringWidth(chartTitle);
-        g2d.drawString(chartTitle, (width - titleWidth) / 2, 30);
-        
-        // Draw axes
-        g2d.setColor(new Color(52, 73, 94));
-        g2d.setStroke(new BasicStroke(2));
-        
-        // Y-axis
-        g2d.drawLine(margin, topMargin, margin, height - bottomMargin);
-        // X-axis
-        g2d.drawLine(margin, height - bottomMargin, width - rightMargin, height - bottomMargin);
-        
-        // Find max value for scaling
-        double maxValue = 0;
+        int chartW = width - (2 * padding);
+        int chartH = height - topPadding - bottomPadding;
+
+        // 1. Draw Title
+        drawTitle(g2d, width);
+
+        // 2. Calculate Max Value & Scale
+        double rawMax = 0;
         for (Object[] row : data) {
-            double value = ((Number) row[2]).doubleValue(); // Assuming total is at index 2
-            if (value > maxValue) {
-                maxValue = value;
-            }
+            double val = ((Number) row[2]).doubleValue();
+            if (val > rawMax) rawMax = val;
         }
-        
-        if (maxValue == 0) {
-            drawNoData(g);
-            return;
-        }
-        
-        // Draw Y-axis labels and grid lines
-        g2d.setFont(new Font("Arial", Font.PLAIN, 11));
-        int ySteps = 5;
-        double yInterval = maxValue / ySteps;
-        
-        for (int i = 0; i <= ySteps; i++) {
-            double value = yInterval * i;
-            int y = height - bottomMargin - (int) ((value / maxValue) * chartHeight);
-            
-            // Grid line
-            g2d.setColor(new Color(220, 220, 220));
-            g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2}, 0));
-            g2d.drawLine(margin, y, width - rightMargin, y);
-            
-            // Label
-            g2d.setColor(new Color(100, 100, 100));
-            g2d.setStroke(new BasicStroke(1));
-            String label = String.format("%.0f", value);
-            g2d.drawString(label, margin - 35, y + 5);
-        }
-        
-        // Draw Y-axis label
-        g2d.setColor(new Color(52, 73, 94));
-        g2d.setFont(new Font("Arial", Font.BOLD, 12));
-        g2d.rotate(-Math.PI / 2);
-        g2d.drawString(yAxisLabel, -(height + yAxisLabel.length() * 6) / 2, 20);
-        g2d.rotate(Math.PI / 2);
-        
-        // Draw chart based on type
+        // Add 10% headroom so bars don't touch the top
+        double maxScale = (rawMax == 0) ? 10 : rawMax * 1.1;
+
+        // 3. Draw Grid and Y-Axis Labels
+        drawGridAndYAxis(g2d, padding, topPadding, chartW, chartH, maxScale);
+
+        // 4. Draw Chart Content
         if (chartType == ChartType.BAR) {
-            drawBarChart(g2d, margin, topMargin, chartWidth, chartHeight, maxValue);
+            drawBarChart(g2d, padding, topPadding, chartW, chartH, maxScale);
         } else {
-            drawLineChart(g2d, margin, topMargin, chartWidth, chartHeight, maxValue);
+            drawLineChart(g2d, padding, topPadding, chartW, chartH, maxScale);
         }
-        
-        // Draw X-axis label
-        g2d.setColor(new Color(52, 73, 94));
-        g2d.setFont(new Font("Arial", Font.BOLD, 12));
-        int xLabelWidth = g2d.getFontMetrics().stringWidth(xAxisLabel);
-        g2d.drawString(xAxisLabel, margin + (chartWidth - xLabelWidth) / 2, height - 20);
+
+        // 5. Draw Axes Lines
+        g2d.setColor(Color.GRAY);
+        g2d.setStroke(new BasicStroke(1));
+        g2d.drawLine(padding, topPadding, padding, topPadding + chartH); // Y Axis
+        g2d.drawLine(padding, topPadding + chartH, padding + chartW, topPadding + chartH); // X Axis
+
+        // 6. Draw X/Y Label Text
+        drawAxisLabels(g2d, padding, topPadding, chartW, chartH);
+
+        // 7. Draw Tooltip if hovering
+        if (hoveredIndex != -1 && mousePosition != null) {
+            drawTooltip(g2d, hoveredIndex);
+        }
     }
-    
-    private void drawBarChart(Graphics2D g2d, int margin, int topMargin, int chartWidth, int chartHeight, double maxValue) {
-        int barWidth = Math.max(15, (chartWidth - (data.size() * 10)) / data.size());
-        int spacing = Math.max(5, (chartWidth - (barWidth * data.size())) / (data.size() + 1));
-        
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd");
-        g2d.setFont(new Font("Arial", Font.PLAIN, 10));
-        
-        for (int i = 0; i < data.size(); i++) {
-            Object[] row = data.get(i);
-            double value = ((Number) row[2]).doubleValue();
-            int barHeight = (int) ((value / maxValue) * chartHeight);
-            
-            int x = margin + spacing + (i * (barWidth + spacing));
-            int y = getHeight() - topMargin - chartHeight + (chartHeight - barHeight);
-            
-            // Draw bar with gradient
-            GradientPaint gradient = new GradientPaint(
-                x, y, chartColor.brighter(),
-                x, y + barHeight, chartColor
-            );
-            g2d.setPaint(gradient);
-            g2d.fillRect(x, y, barWidth, barHeight);
-            
-            // Draw bar border
-            g2d.setColor(chartColor.darker());
-            g2d.setStroke(new BasicStroke(1));
-            g2d.drawRect(x, y, barWidth, barHeight);
-            
-            // Draw X-axis label
-            g2d.setColor(new Color(100, 100, 100));
-            String label;
-            if (row[0] instanceof Date) {
-                label = dateFormat.format((Date) row[0]);
-            } else {
-                label = row[0].toString();
+
+    private void drawTitle(Graphics2D g2d, int width) {
+        g2d.setColor(new Color(44, 62, 80));
+        g2d.setFont(titleFont);
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.drawString(chartTitle, (width - fm.stringWidth(chartTitle)) / 2, 35);
+    }
+
+    private void drawGridAndYAxis(Graphics2D g2d, int x, int y, int w, int h, double max) {
+        int steps = 5;
+        g2d.setFont(labelFont);
+
+        for (int i = 0; i <= steps; i++) {
+            int yPos = y + h - (int) ((i * 1.0 / steps) * h);
+            double val = (max / steps) * i;
+
+            // Draw grid line
+            if (i > 0) { // Don't draw over X axis
+                g2d.setColor(new Color(240, 240, 240));
+                g2d.setStroke(new BasicStroke(1));
+                g2d.drawLine(x, yPos, x + w, yPos);
             }
-            
+
+            // Draw Text
+            g2d.setColor(Color.GRAY);
+            String label = String.format("%.0f", val);
             FontMetrics fm = g2d.getFontMetrics();
-            int labelWidth = fm.stringWidth(label);
-            
-            // Rotate label if needed
-            if (data.size() > 10) {
-                g2d.rotate(-Math.PI / 4, x + barWidth / 2, getHeight() - topMargin + 10);
-                g2d.drawString(label, x + barWidth / 2, getHeight() - topMargin + 10);
-                g2d.rotate(Math.PI / 4, x + barWidth / 2, getHeight() - topMargin + 10);
-            } else {
-                g2d.drawString(label, x + (barWidth - labelWidth) / 2, getHeight() - topMargin + 20);
-            }
-            
-            // Draw value on top of bar
-            if (barHeight > 20) {
-                g2d.setColor(Color.WHITE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 10));
-                String valueStr = String.format("%.0f", value);
-                int valueWidth = g2d.getFontMetrics().stringWidth(valueStr);
-                g2d.drawString(valueStr, x + (barWidth - valueWidth) / 2, y + 15);
-            }
+            g2d.drawString(label, x - fm.stringWidth(label) - 8, yPos + 5);
         }
     }
-    
-    private void drawLineChart(Graphics2D g2d, int margin, int topMargin, int chartWidth, int chartHeight, double maxValue) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd");
-        g2d.setFont(new Font("Arial", Font.PLAIN, 10));
-        
-        int pointSpacing = chartWidth / (data.size() > 1 ? data.size() - 1 : 1);
-        
-        // Draw line
-        g2d.setColor(chartColor);
-        g2d.setStroke(new BasicStroke(3));
-        
+
+    private void drawAxisLabels(Graphics2D g2d, int x, int y, int w, int h) {
+        g2d.setColor(new Color(100, 100, 100));
+        g2d.setFont(axisFont);
+
+        // X Label
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.drawString(xAxisLabel, x + (w - fm.stringWidth(xAxisLabel)) / 2, y + h + 40);
+
+        // Y Label (Rotated)
+        g2d.rotate(-Math.PI / 2);
+        g2d.drawString(yAxisLabel, -(y + h / 2 + fm.stringWidth(yAxisLabel) / 2), x - 30);
+        g2d.rotate(Math.PI / 2);
+    }
+
+    private void drawBarChart(Graphics2D g2d, int xStart, int yStart, int w, int h, double max) {
+        int count = data.size();
+        int barWidth = (w / count) / 2;
+        int spacing = w / count;
+
+        for (int i = 0; i < count; i++) {
+            double val = ((Number) data.get(i)[2]).doubleValue();
+            int barHeight = (int) ((val / max) * h);
+            int xPos = xStart + (i * spacing) + (spacing - barWidth) / 2;
+            int yPos = yStart + h - barHeight;
+
+            // Highlight if hovered
+            if (i == hoveredIndex) {
+                g2d.setColor(chartColor.brighter());
+            } else {
+                g2d.setColor(chartColor);
+            }
+
+            // Draw Rounded Bar
+            g2d.fillRoundRect(xPos, yPos, barWidth, barHeight, 10, 10);
+
+            // Draw Date Label
+            drawXDateLabel(g2d, i, xPos + barWidth/2, yStart + h + 20);
+        }
+    }
+
+    private void drawLineChart(Graphics2D g2d, int xStart, int yStart, int w, int h, double max) {
+        if (data.size() < 2) return;
+
+        int spacing = w / (data.size() - 1);
         int[] xPoints = new int[data.size()];
         int[] yPoints = new int[data.size()];
-        
+
+        // Calculate points
         for (int i = 0; i < data.size(); i++) {
-            Object[] row = data.get(i);
-            double value = ((Number) row[2]).doubleValue();
-            
-            int x = margin + (i * pointSpacing);
-            int y = getHeight() - topMargin - chartHeight + (chartHeight - (int) ((value / maxValue) * chartHeight));
-            
-            xPoints[i] = x;
-            yPoints[i] = y;
+            double val = ((Number) data.get(i)[2]).doubleValue();
+            xPoints[i] = xStart + (i * spacing);
+            yPoints[i] = yStart + h - (int) ((val / max) * h);
         }
-        
-        // Draw line segments
-        for (int i = 0; i < data.size() - 1; i++) {
-            g2d.drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
-        }
-        
-        // Draw points and labels
+
+        // Draw Line
+        g2d.setColor(chartColor);
+        g2d.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2d.drawPolyline(xPoints, yPoints, data.size());
+
+        // Draw Points & Hover effect
         for (int i = 0; i < data.size(); i++) {
-            Object[] row = data.get(i);
-            double value = ((Number) row[2]).doubleValue();
-            
-            // Draw point
-            g2d.setColor(chartColor.darker());
-            g2d.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
+            int radius = (i == hoveredIndex) ? 12 : 8; // Make bigger if hovered
+            int offset = radius / 2;
+
             g2d.setColor(Color.WHITE);
-            g2d.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
-            
-            // Draw X-axis label
-            g2d.setColor(new Color(100, 100, 100));
-            String label;
-            if (row[0] instanceof Date) {
-                label = dateFormat.format((Date) row[0]);
-            } else {
-                label = row[0].toString();
-            }
-            
-            FontMetrics fm = g2d.getFontMetrics();
-            int labelWidth = fm.stringWidth(label);
-            g2d.drawString(label, xPoints[i] - labelWidth / 2, getHeight() - topMargin + 20);
-            
-            // Draw value above point
-            g2d.setColor(chartColor.darker());
-            g2d.setFont(new Font("Arial", Font.BOLD, 10));
-            String valueStr = String.format("%.0f", value);
-            int valueWidth = g2d.getFontMetrics().stringWidth(valueStr);
-            g2d.drawString(valueStr, xPoints[i] - valueWidth / 2, yPoints[i] - 10);
+            g2d.fillOval(xPoints[i] - offset, yPoints[i] - offset, radius, radius);
+
+            g2d.setColor(chartColor);
+            g2d.setStroke(new BasicStroke(2));
+            g2d.drawOval(xPoints[i] - offset, yPoints[i] - offset, radius, radius);
+
+            drawXDateLabel(g2d, i, xPoints[i], yStart + h + 20);
         }
     }
-    
-    private void drawNoData(Graphics g) {
-        g.setColor(new Color(150, 150, 150));
-        g.setFont(new Font("Arial", Font.PLAIN, 16));
-        String message = "No data available";
+
+    private void drawXDateLabel(Graphics2D g2d, int index, int xCenter, int yPos) {
+        // Skip some labels if too many data points to avoid overlapping
+        if (data.size() > 10 && index % 2 != 0) return;
+
+        Object dateObj = data.get(index)[0];
+        String dateStr = (dateObj instanceof Date) ? dateFormat.format((Date) dateObj) : dateObj.toString();
+
+        g2d.setColor(Color.GRAY);
+        g2d.setFont(labelFont);
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.drawString(dateStr, xCenter - fm.stringWidth(dateStr) / 2, yPos);
+    }
+
+    private void drawTooltip(Graphics2D g2d, int index) {
+        Object[] row = data.get(index);
+        String date = (row[0] instanceof Date) ? dateFormat.format((Date) row[0]) : row[0].toString();
+        String value = row[2].toString();
+        String text = date + ": " + value;
+
+        // Calculate Box Size
+        g2d.setFont(tooltipFont);
+        FontMetrics fm = g2d.getFontMetrics();
+        int boxW = fm.stringWidth(text) + 20;
+        int boxH = 25;
+
+        int x = mousePosition.x + 10;
+        int y = mousePosition.y - 30;
+
+        // Prevent tooltip from going off screen
+        if (x + boxW > getWidth()) x = mousePosition.x - boxW - 10;
+        if (y < 0) y = mousePosition.y + 20;
+
+        // Draw Shadow
+        g2d.setColor(new Color(0,0,0,50));
+        g2d.fillRoundRect(x+2, y+2, boxW, boxH, 10, 10);
+
+        // Draw Box
+        g2d.setColor(new Color(255, 255, 225)); // Light yellow tooltip style
+        g2d.fillRoundRect(x, y, boxW, boxH, 10, 10);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(x, y, boxW, boxH, 10, 10);
+
+        // Draw Text
+        g2d.setColor(Color.BLACK);
+        g2d.drawString(text, x + 10, y + 17);
+    }
+
+    // Logic to find which bar/point is closest to mouse
+    private void calculateHoverIndex(int mouseX, int mouseY) {
+        if (data == null || data.isEmpty()) return;
+
+        int padding = 50;
+        int width = getWidth();
+        int chartW = width - (2 * padding);
+        int oldIndex = hoveredIndex;
+
+        if (chartType == ChartType.BAR) {
+            int count = data.size();
+            int spacing = chartW / count;
+
+            // Check which "column" the mouse is in
+            int relativeX = mouseX - padding;
+            if (relativeX >= 0 && relativeX <= chartW) {
+                hoveredIndex = relativeX / spacing;
+                if (hoveredIndex >= count) hoveredIndex = -1;
+            } else {
+                hoveredIndex = -1;
+            }
+        } else {
+            // For Line chart, find closest point X
+            int count = data.size();
+            if (count < 2) return;
+
+            int spacing = chartW / (count - 1);
+            int bestIndex = -1;
+            int minDist = Integer.MAX_VALUE;
+
+            for (int i = 0; i < count; i++) {
+                int px = padding + (i * spacing);
+                int dist = Math.abs(mouseX - px);
+                if (dist < minDist) {
+                    minDist = dist;
+                    bestIndex = i;
+                }
+            }
+            // Only highlight if close enough (e.g., within 20px)
+            if (minDist < 30) {
+                hoveredIndex = bestIndex;
+            } else {
+                hoveredIndex = -1;
+            }
+        }
+    }
+
+    private void drawNoData(Graphics2D g) {
+        g.setColor(Color.LIGHT_GRAY);
+        g.setFont(titleFont);
+        String msg = "No Data Available";
         FontMetrics fm = g.getFontMetrics();
-        int messageWidth = fm.stringWidth(message);
-        g.drawString(message, (getWidth() - messageWidth) / 2, getHeight() / 2);
+        g.drawString(msg, (getWidth() - fm.stringWidth(msg)) / 2, getHeight() / 2);
     }
 }

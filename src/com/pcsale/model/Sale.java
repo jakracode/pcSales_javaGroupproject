@@ -140,6 +140,9 @@ public class Sale {
     }
     
     public BigDecimal getChangeDue() {
+        if (changeDue == null && amountPaid != null && totalAmount != null) {
+            return amountPaid.subtract(totalAmount);
+        }
         return changeDue;
     }
     

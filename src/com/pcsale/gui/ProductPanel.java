@@ -8,9 +8,14 @@ import com.pcsale.util.Formatter;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.math.BigDecimal;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
@@ -70,18 +75,27 @@ public class ProductPanel extends JPanel {
         topPanel.add(searchPanel, BorderLayout.EAST);
         
         // Table
-        String[] columns = {"ID", "Barcode", "Name", "Category", "Cost", "Selling Price", "Stock", "Status"};
+        String[] columns = {"Image", "ID", "Barcode", "Name", "Category", "Cost", "Selling Price", "Stock", "Status"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
+            
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 0) return ImageIcon.class;
+                return super.getColumnClass(columnIndex);
+            }
         };
         
         table = new JTable(tableModel);
         table.setFont(new Font("Arial", Font.PLAIN, 13));
-        table.setRowHeight(25);
+        table.setRowHeight(60); // Increased for images
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Image column renderer
+        table.getColumnModel().getColumn(0).setPreferredWidth(60);
         
         JScrollPane scrollPane = new JScrollPane(table);
         
@@ -136,7 +150,9 @@ public class ProductPanel extends JPanel {
         tableModel.setRowCount(0);
         List<Product> products = productDAO.getAllProducts();
         for (Product product : products) {
+            ImageIcon icon = getScaledImage(product.getImage(), 50, 50);
             tableModel.addRow(new Object[]{
+                icon,
                 product.getId(),
                 product.getBarcode(),
                 product.getName(),
@@ -146,6 +162,21 @@ public class ProductPanel extends JPanel {
                 product.getStockQuantity(),
                 product.getStatus()
             });
+        }
+    }
+
+    private ImageIcon getScaledImage(String path, int width, int height) {
+        if (path == null || path.isEmpty()) return null;
+        try {
+            File file = new File(path);
+            if (!file.exists()) return null;
+            
+            ImageIcon icon = new ImageIcon(path);
+            Image img = icon.getImage();
+            Image scaledImg = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImg);
+        } catch (Exception e) {
+            return null;
         }
     }
     
@@ -246,6 +277,8 @@ public class ProductPanel extends JPanel {
         private JTextField txtBarcode, txtName, txtCostPrice, txtSellingPrice, txtStock, txtReorderLevel;
         private JComboBox<Category> cboCategory;
         private JComboBox<String> cboStatus;
+        private JLabel lblImagePreview;
+        private String selectedImagePath;
         private Product product;
         private boolean success = false;
         
@@ -260,7 +293,7 @@ public class ProductPanel extends JPanel {
         }
         
         private void initDialog() {
-            setSize(500, 450);
+            setSize(500, 650);
             setLayout(null);
             
             int y = 20;
@@ -348,7 +381,23 @@ public class ProductPanel extends JPanel {
             cboStatus = new JComboBox<>(new String[]{"active", "inactive"});
             cboStatus.setBounds(160, y, 140, 30);
             add(cboStatus);
-            y += 50;
+            y += 40;
+
+            // Image
+            JLabel lblImage = new JLabel("Product Image:");
+            lblImage.setBounds(30, y, 120, 25);
+            add(lblImage);
+            
+            JButton btnBrowse = new JButton("Browse...");
+            btnBrowse.setBounds(160, y, 100, 30);
+            btnBrowse.addActionListener(e -> browseImage());
+            add(btnBrowse);
+            
+            lblImagePreview = new JLabel("No Image", SwingConstants.CENTER);
+            lblImagePreview.setBounds(270, y, 100, 100);
+            lblImagePreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            add(lblImagePreview);
+            y += 110;
             
             // Buttons
             JButton btnSave = new JButton("Save");
@@ -367,6 +416,28 @@ public class ProductPanel extends JPanel {
             btnCancel.addActionListener(e -> dispose());
             add(btnCancel);
         }
+
+        private void browseImage() {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "png", "jpeg", "gif"));
+            int result = fileChooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                selectedImagePath = selectedFile.getAbsolutePath();
+                updateImagePreview(selectedImagePath);
+            }
+        }
+
+        private void updateImagePreview(String path) {
+            ImageIcon icon = getScaledImage(path, 100, 100);
+            if (icon != null) {
+                lblImagePreview.setIcon(icon);
+                lblImagePreview.setText("");
+            } else {
+                lblImagePreview.setIcon(null);
+                lblImagePreview.setText("No Image");
+            }
+        }
         
         private void fillData() {
             txtBarcode.setText(product.getBarcode());
@@ -377,6 +448,11 @@ public class ProductPanel extends JPanel {
             txtReorderLevel.setText(String.valueOf(product.getReorderLevel()));
             cboStatus.setSelectedItem(product.getStatus());
             
+            selectedImagePath = product.getImage();
+            if (selectedImagePath != null) {
+                updateImagePreview(selectedImagePath);
+            }
+
             // Set category
             if (product.getCategoryId() != null) {
                 for (int i = 0; i < cboCategory.getItemCount(); i++) {
@@ -411,6 +487,20 @@ public class ProductPanel extends JPanel {
                 p.setReorderLevel(Integer.parseInt(txtReorderLevel.getText().trim()));
                 p.setStatus(cboStatus.getSelectedItem().toString());
                 
+                // Handle image copy
+                if (selectedImagePath != null && (product == null || !selectedImagePath.equals(product.getImage()))) {
+                    File source = new File(selectedImagePath);
+                    if (source.exists() && source.isFile()) {
+                        String fileName = System.currentTimeMillis() + "_" + source.getName();
+                        File destDir = new File("resources/product_images");
+                        if (!destDir.exists()) destDir.mkdirs();
+                        
+                        File dest = new File(destDir, fileName);
+                        Files.copy(source.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        p.setImage("resources/product_images/" + fileName);
+                    }
+                }
+                
                 boolean result;
                 if (product == null) {
                     result = productDAO.addProduct(p);
@@ -426,8 +516,9 @@ public class ProductPanel extends JPanel {
                     JOptionPane.showMessageDialog(this, "Failed to save product!");
                 }
                 
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Invalid number format!");
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+                e.printStackTrace();
             }
         }
         
